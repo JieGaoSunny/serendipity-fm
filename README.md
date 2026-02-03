@@ -15,18 +15,7 @@
 - 📱 **响应式设计** - 完美适配手机、平板、电脑
 - 🎨 **Apple 风格 UI** - 毛玻璃卡片、圆角设计
 
-## 🖼️ 截图预览
-
-### 桌面端
-![桌面端界面](https://raw.githubusercontent.com/JieGaoSunny/serendipity-fm/main/screenshots/desktop.png)
-
-### 播放状态
-![播放中](https://raw.githubusercontent.com/JieGaoSunny/serendipity-fm/main/screenshots/playing.png)
-
-### 移动端
-![移动端界面](https://raw.githubusercontent.com/JieGaoSunny/serendipity-fm/main/screenshots/mobile.png)
-
-## 🚀 在线体验
+##  在线体验
 
 访问：**https://jiegaosunny.github.io/serendipity-fm/**
 
