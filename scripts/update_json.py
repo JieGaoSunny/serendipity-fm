@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+import json
+
+data = {
+  "episodes": [
+    {
+      "id": "c1ab6c67",
+      "title": "分享我在高压工作下，保持良好心态和健康生活的经验",
+      "author": "momo",
+      "source": "每日豆瓣",
+      "quote": "要把脆皮变厚皮",
+      "audio_file": "audio/c1ab6c67.mp3",
+      "cover_file": "covers/c1ab6c67.jpg",
+      "duration": 383
+    },
+    {
+      "id": "56349635",
+      "title": "crush了一个女生不洗头的瞬间",
+      "author": "KK",
+      "source": "每日豆瓣",
+      "quote": "我喜欢她不断叩问命运的样子。",
+      "audio_file": "audio/56349635.mp3",
+      "cover_file": "covers/56349635.jpg",
+      "duration": 422
+    },
+    {
+      "id": "60e7fbb8",
+      "title": "我发现了和所有人相处都落落大方的秘诀",
+      "author": "依呀依呀哟",
+      "source": "每日豆瓣",
+      "quote": "对人祛魅，别有任何滤镜。",
+      "audio_file": "audio/60e7fbb8.mp3",
+      "cover_file": "covers/60e7fbb8.jpg",
+      "duration": 131
+    },
+    {
+      "id": "c18dbd14",
+      "title": "只坚持做这一件事，身体就好了很多",
+      "author": "香菜也吃点",
+      "source": "每日豆瓣",
+      "quote": "性价比高，容易坚持",
+      "audio_file": "audio/c18dbd14.mp3",
+      "cover_file": "covers/c18dbd14.jpg",
+      "duration": 199
+    },
+    {
+      "id": "18a26ffa",
+      "title": "我最近运气好到爆！我周围的人全都吸到了好运！！",
+      "author": "Haja",
+      "source": "每日豆瓣",
+      "quote": "无副作用接好运！！",
+      "audio_file": "audio/18a26ffa.mp3",
+      "cover_file": "covers/18a26ffa.jpg",
+      "duration": 163
+    },
+    {
+      "id": "77b3dc80",
+      "title": "妈妈在年会上的获奖感言，我逐字学习",
+      "author": "Haja",
+      "source": "每日豆瓣",
+      "quote": "真正的高情商发言",
+      "audio_file": "audio/77b3dc80.mp3",
+      "cover_file": "covers/77b3dc80.jpg",
+      "duration": 235
+    },
+    {
+      "id": "62e4c91c",
+      "title": "15件做了就能立刻充满电的小事",
+      "author": "豆瓣用户",
+      "source": "每日豆瓣",
+      "quote": "一些立刻获得能量的小tips",
+      "audio_file": "audio/62e4c91c.mp3",
+      "cover_file": "covers/62e4c91c.jpg",
+      "duration": 253
+    },
+    {
+      "id": "8876a941",
+      "title": "从此以后，朋友管我的相亲对象叫满月哥",
+      "author": "向向向生活低头",
+      "source": "每日豆瓣",
+      "quote": "哈哈哈哈哈他可能还觉得自己很浪漫",
+      "audio_file": "audio/8876a941.mp3",
+      "cover_file": "covers/8876a941.jpg",
+      "duration": 157
+    },
+    {
+      "id": "4ee8e64e",
+      "title": "你感受过来自陌生女性的善意吗?",
+      "author": "豆瓣用户",
+      "source": "每日豆瓣",
+      "quote": "女孩子之间的相互帮助真是太美好了",
+      "audio_file": "audio/4ee8e64e.mp3",
+      "cover_file": "covers/4ee8e64e.jpg",
+      "duration": 236
+    }
+  ]
+}
+
+with open("/Users/jie/Documents/SerendipityFM/data/episodes.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+print("episodes.json updated successfully!")

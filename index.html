@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serendipity FM</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            --primary: #17C9A8;
+            --primary-hover: #14b395;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--apple-font);
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            overflow-x: hidden;
+        }
+        
+        ::selection {
+            background: rgba(23, 201, 168, 0.1);
+        }
+        
+        /* 背景动画容器 */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+        
+        #bg-canvas canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        /* Header */
+        header {
+            padding: 48px 64px;
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+            flex-shrink: 0;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .logo-title {
+            font-weight: 600;
+            font-size: 32px;
+            color: var(--text-primary);
+            letter-spacing: -0.025em;
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+        
+        .logo-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            color: #6e6e73;
+            opacity: 0.9;
+        }
+        
+        /* Main */
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            z-index: 10;
+            position: relative;
+        }
+        
+        /* Player Card */
+        .player-card {
+            width: 100%;
+            max-width: 620px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.04);
+            border-radius: 48px;
+            padding: 28px;
+            display: flex;
+            flex-direction: row;
+            gap: 32px;
+            transition: all 1s ease;
+        }
+        
+        /* Cover */
+        .cover-wrapper {
+            width: 260px;
+            height: 260px;
+            border-radius: 36px;
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+        
+        .cover-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 3s ease;
+        }
+        
+        .cover-wrapper:hover .cover-image {
+            transform: scale(1.05);
+        }
+        
+        /* Audio Bars */
+        .audio-bars {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 16px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .audio-bars.playing {
+            opacity: 1;
+        }
+        
+        .audio-bar {
+            width: 2px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 2px;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        
+        .audio-bar:nth-child(1) { animation-duration: 1s; }
+        .audio-bar:nth-child(2) { animation-duration: 1.4s; }
+        .audio-bar:nth-child(3) { animation-duration: 0.8s; }
+        
+        @keyframes bounce {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+        
+        /* Controls Section */
+        .controls-section {
+            flex: 1;
+            padding: 12px 12px 12px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+        
+        /* Play Button */
+        .btn-play-main {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 56px;
+            height: 56px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(23, 201, 168, 0.3);
+            transition: all 0.2s;
+        }
+        
+        .btn-play-main:hover {
+            background: var(--primary-hover);
+            transform: scale(1.05);
+        }
+        
+        .btn-play-main:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-play-main svg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        /* Track Info */
+        .track-info {
+            margin-top: 16px;
+            padding-right: 64px;
+        }
+        
+        .shuffle-label {
+            font-size: 11px;
+            color: var(--primary);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            opacity: 0.8;
+        }
+        
+        .track-title {
+            font-weight: 600;
+            font-size: 21px;
+            color: var(--text-primary);
+            letter-spacing: -0.025em;
+            line-height: 1.35;
+            margin-bottom: 8px;
+        }
+        
+        .track-quote {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 15px;
+            font-weight: 400;
+            font-style: italic;
+            color: var(--text-secondary);
+            letter-spacing: 0.01em;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        /* Progress */
+        .progress-section {
+            margin-top: 40px;
+        }
+        
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .progress-labels span:first-child {
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .progress-bar {
+            height: 3px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s linear;
+        }
+        
+        /* Control Buttons */
+        .control-buttons {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding-top: 16px;
+        }
+        
+        .btn-control {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.04);
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-control:hover {
+            background: rgba(0, 0, 0, 0.08);
+            color: #666;
+            transform: scale(1.1);
+        }
+        
+        .btn-control:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-control svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .btn-heart.liked {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+        
+        .btn-next:hover {
+            background: rgba(23, 201, 168, 0.1);
+            color: var(--primary);
+        }
+        
+        /* Footer */
+        footer {
+            padding: 48px 64px;
+            flex-shrink: 0;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .footer-text {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            letter-spacing: -0.012em;
+            opacity: 0.7;
+        }
+        
+        /* Responsive - Tablet */
+        @media (max-width: 900px) {
+            header {
+                padding: 40px 32px;
+            }
+            
+            .player-card {
+                max-width: 540px;
+                padding: 24px;
+                gap: 28px;
+            }
+            
+            .cover-wrapper {
+                width: 220px;
+                height: 220px;
+                border-radius: 28px;
+            }
+        }
+        
+        /* Responsive - Mobile */
+        @media (max-width: 700px) {
+            header {
+                padding: 24px 20px;
+            }
+            
+            .logo-title {
+                font-size: 24px;
+            }
+            
+            .logo-subtitle {
+                font-size: 13px;
+            }
+            
+            main {
+                padding: 16px;
+                align-items: flex-start;
+                padding-top: 0;
+            }
+            
+            .player-card {
+                flex-direction: column;
+                padding: 16px;
+                border-radius: 28px;
+                gap: 20px;
+                max-width: 100%;
+            }
+            
+            .cover-wrapper {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1;
+                border-radius: 20px;
+                max-height: 320px;
+            }
+            
+            .controls-section {
+                padding: 0;
+            }
+            
+            .btn-play-main {
+                width: 52px;
+                height: 52px;
+            }
+            
+            .track-info {
+                padding-right: 60px;
+                margin-top: 8px;
+            }
+            
+            .shuffle-label {
+                font-size: 10px;
+                margin-bottom: 8px;
+            }
+            
+            .track-title {
+                font-size: 18px;
+                line-height: 1.3;
+            }
+            
+            .track-quote {
+                font-size: 14px;
+                margin-bottom: 16px;
+            }
+            
+            .progress-section {
+                margin-top: 24px;
+            }
+            
+            .control-buttons {
+                gap: 16px;
+                padding-top: 12px;
+            }
+            
+            .btn-control {
+                width: 44px;
+                height: 44px;
+            }
+            
+            footer {
+                padding: 24px 20px;
+                text-align: center;
+            }
+            
+            .footer-text {
+                font-size: 10px;
+            }
+        }
+        
+        /* Responsive - Small Mobile */
+        @media (max-width: 380px) {
+            header {
+                padding: 20px 16px;
+            }
+            
+            .logo-title {
+                font-size: 22px;
+            }
+            
+            main {
+                padding: 12px;
+            }
+            
+            .player-card {
+                padding: 14px;
+                border-radius: 24px;
+            }
+            
+            .track-title {
+                font-size: 16px;
+            }
+            
+            .control-buttons {
+                gap: 12px;
+            }
+            
+            .btn-control {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Three.js 背景 -->
+    <div id="bg-canvas"></div>
+
+    <!-- Header -->
+    <header>
+        <h1 class="logo-title">Serendipity FM</h1>
+        <p class="logo-subtitle">人类终将在声音的旷野里相遇。</p>
+    </header>
+
+    <!-- Main Player -->
+    <main>
+        <div class="player-card">
+            <!-- Cover -->
+            <div class="cover-wrapper">
+                <img 
+                    class="cover-image" 
+                    id="coverImage"
+                    src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&h=600&fit=crop" 
+                    alt="cover"
+                >
+                <div class="audio-bars" id="audioBars">
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                </div>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="controls-section">
+                <!-- Play Button -->
+                <button class="btn-play-main" id="btnPlay" aria-label="播放">
+                    <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                        <rect x="6" y="4" width="4" height="16" rx="1"/>
+                        <rect x="14" y="4" width="4" height="16" rx="1"/>
+                    </svg>
+                </button>
+
+                <!-- Track Info -->
+                <div class="track-info">
+                    <div class="shuffle-label" id="shuffleLabel">每日豆瓣</div>
+                    <h2 class="track-title" id="trackTitle">加载中...</h2>
+                    <p class="track-quote" id="trackQuote">--</p>
+                    
+                    <!-- Progress -->
+                    <div class="progress-section">
+                        <div class="progress-labels">
+                            <span id="authorLabel">--</span>
+                            <span id="timeRemaining">-0:00</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="control-buttons">
+                    <button class="btn-control btn-heart" id="btnHeart" aria-label="喜欢">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                    </button>
+                    <button class="btn-control btn-trash" id="btnTrash" aria-label="删除">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                    <button class="btn-control btn-next" id="btnNext" aria-label="下一个">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p class="footer-text">Serendipity FM • 随机播放 · 遇见惊喜</p>
+    </footer>
+
+    <!-- Audio -->
+    <audio id="audioPlayer" preload="auto"></audio>
+
+    <script>
+        // ==================== Three.js FloatingLines 背景 (光晕流动效果) ====================
+        function initFloatingLines() {
+            const container = document.getElementById('bg-canvas');
+            if (!container) {
+                console.error('bg-canvas not found');
+                return;
+            }
+            if (typeof THREE === 'undefined') {
+                console.error('THREE.js not loaded');
+                return;
+            }
+
+            console.log('Starting FloatingLines initialization...');
+
+            // 配置参数 - 绿色渐变色系
+            const linesGradient = ['#17C9A8', '#4DB6AC', '#80CBC4', '#B2DFDB'];
+            const animationSpeed = 0.2;
+            const parallaxStrength = 0.06;
+            
+            // 鼠标视差追踪
+            let targetParallax = { x: 0, y: 0 };
+            let currentParallax = { x: 0, y: 0 };
+
+            const vertexShader = `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `;
+
+            // 流动光晕波浪线 shader
+            const fragmentShader = `
+                precision highp float;
+                uniform float iTime;
+                uniform vec3 iResolution;
+                uniform float animationSpeed;
+                uniform vec2 parallaxOffset;
+                uniform vec3 lineGradient[4];
+
+                mat2 rotate(float r) {
+                    return mat2(cos(r), sin(r), -sin(r), cos(r));
+                }
+
+                float wave(vec2 uv, float offset, float ampMult) {
+                    float time = iTime * animationSpeed;
+                    float x_movement = time * 0.1;
+                    float amp = sin(offset + time * 0.2) * 0.12 * ampMult;
+                    float y = sin(uv.x + offset + x_movement) * amp;
+                    return 0.06 / max(abs(uv.y - y) + 0.025, 0.001);
+                }
+
+                void main() {
+                    vec2 fragCoord = gl_FragCoord.xy;
+                    vec2 uv = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
+                    uv += parallaxOffset;
+                    
+                    // 浅色背景 - 略带绿色调的白色
+                    vec3 col = vec3(0.98, 0.995, 0.99);
+                    
+                    // 第一条波浪线 - 主绿色
+                    float w1 = wave(uv * rotate(0.4) + vec2(2.0, -0.7), 1.5, 1.0);
+                    col = mix(col, lineGradient[0], w1 * 0.18);
+
+                    // 第二条波浪线 - 浅绿色
+                    float w2 = wave(uv * rotate(-0.2) + vec2(5.0, 0.2), 2.0, 0.8);
+                    col = mix(col, lineGradient[1], w2 * 0.22);
+
+                    // 第三条波浪线 - 更浅绿色
+                    float w3 = wave(uv * rotate(0.1) + vec2(-3.0, 0.5), 1.0, 1.2);
+                    col = mix(col, lineGradient[2], w3 * 0.18);
+                    
+                    // 第四条波浪线 - 最浅绿色
+                    float w4 = wave(uv * rotate(-0.3) + vec2(1.0, -0.3), 2.5, 0.9);
+                    col = mix(col, lineGradient[3], w4 * 0.15);
+                    
+                    // 第五条波浪线 - 额外的主绿色层
+                    float w5 = wave(uv * rotate(0.25) + vec2(-1.5, 0.8), 1.8, 1.1);
+                    col = mix(col, lineGradient[0], w5 * 0.12);
+
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `;
+
+            try {
+                const scene = new THREE.Scene();
+                const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+                camera.position.z = 1;
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                renderer.setSize(width, height);
+                container.appendChild(renderer.domElement);
+
+                console.log('Renderer created:', width, 'x', height);
+
+                // 颜色转换函数
+                const hexToVec3 = (hex) => {
+                    const h = hex.replace('#', '');
+                    return new THREE.Vector3(
+                        parseInt(h.substring(0, 2), 16) / 255,
+                        parseInt(h.substring(2, 4), 16) / 255,
+                        parseInt(h.substring(4, 6), 16) / 255
+                    );
+                };
+
+                const uniforms = {
+                    iTime: { value: 0 },
+                    iResolution: { value: new THREE.Vector3(width, height, 1) },
+                    animationSpeed: { value: animationSpeed },
+                    parallaxOffset: { value: new THREE.Vector2(0, 0) },
+                    lineGradient: { value: linesGradient.map(hexToVec3) }
+                };
+
+                const material = new THREE.ShaderMaterial({
+                    uniforms,
+                    vertexShader,
+                    fragmentShader
+                });
+
+                const geometry = new THREE.PlaneGeometry(2, 2);
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+
+                console.log('Mesh added to scene');
+
+                // 窗口大小调整
+                window.addEventListener('resize', () => {
+                    const w = window.innerWidth;
+                    const h = window.innerHeight;
+                    renderer.setSize(w, h);
+                    uniforms.iResolution.value.set(w, h, 1);
+                });
+                
+                // 鼠标移动视差效果
+                window.addEventListener('pointermove', (e) => {
+                    const x = (e.clientX / window.innerWidth) * 2 - 1;
+                    const y = -((e.clientY / window.innerHeight) * 2 - 1);
+                    targetParallax = { x: x * parallaxStrength, y: y * parallaxStrength };
+                });
+
+                const clock = new THREE.Clock();
+                function animate() {
+                    uniforms.iTime.value = clock.getElapsedTime();
+                    
+                    // 平滑视差插值
+                    currentParallax.x += (targetParallax.x - currentParallax.x) * 0.05;
+                    currentParallax.y += (targetParallax.y - currentParallax.y) * 0.05;
+                    uniforms.parallaxOffset.value.set(currentParallax.x, currentParallax.y);
+                    
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(animate);
+                }
+                animate();
+                
+                console.log('Animation started successfully!');
+
+            } catch (error) {
+                console.error('FloatingLines error:', error);
+            }
+        }
+
+        // 确保 Three.js 加载后再初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFloatingLines);
+        } else {
+            initFloatingLines();
+        }
+
+        // ==================== 播放器逻辑 ====================
+        class SerendipityFM {
+            constructor() {
+                this.episodes = [];
+                this.currentEpisode = null;
+                this.playedIds = new Set();
+                this.likedIds = new Set(this.loadFromStorage('liked') || []);
+                this.skippedIds = new Set(this.loadFromStorage('skipped') || []);
+                this.isPlaying = false;
+
+                this.initElements();
+                this.initEventListeners();
+                this.loadEpisodes();
+            }
+
+            initElements() {
+                this.audio = document.getElementById('audioPlayer');
+                this.coverImage = document.getElementById('coverImage');
+                this.audioBars = document.getElementById('audioBars');
+                this.shuffleLabel = document.getElementById('shuffleLabel');
+                this.trackTitle = document.getElementById('trackTitle');
+                this.trackQuote = document.getElementById('trackQuote');
+                this.authorLabel = document.getElementById('authorLabel');
+                this.timeRemaining = document.getElementById('timeRemaining');
+                this.progressFill = document.getElementById('progressFill');
+
+                this.btnPlay = document.getElementById('btnPlay');
+                this.iconPlay = this.btnPlay.querySelector('.icon-play');
+                this.iconPause = this.btnPlay.querySelector('.icon-pause');
+                this.btnHeart = document.getElementById('btnHeart');
+                this.btnTrash = document.getElementById('btnTrash');
+                this.btnNext = document.getElementById('btnNext');
+            }
+
+            initEventListeners() {
+                this.btnPlay.addEventListener('click', () => this.togglePlay());
+                this.btnHeart.addEventListener('click', () => this.toggleLike());
+                this.btnTrash.addEventListener('click', () => this.skipEpisode());
+                this.btnNext.addEventListener('click', () => this.playNext());
+
+                this.audio.addEventListener('timeupdate', () => this.updateProgress());
+                this.audio.addEventListener('ended', () => this.playNext());
+                this.audio.addEventListener('play', () => this.onPlay());
+                this.audio.addEventListener('pause', () => this.onPause());
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') { e.preventDefault(); this.togglePlay(); }
+                    if (e.code === 'ArrowRight') this.playNext();
+                    if (e.code === 'KeyL') this.toggleLike();
+                });
+            }
+
+            async loadEpisodes() {
+                try {
+                    const res = await fetch('data/episodes.json');
+                    const data = await res.json();
+                    this.episodes = data.episodes || [];
+                    if (this.episodes.length === 0) {
+                        this.trackTitle.textContent = '暂无节目';
+                        return;
+                    }
+                    this.playRandom();
+                } catch (e) {
+                    console.error('加载失败:', e);
+                    this.trackTitle.textContent = '加载失败，请刷新';
+                }
+            }
+
+            getAvailableEpisodes() {
+                return this.episodes.filter(ep => !this.skippedIds.has(ep.id));
+            }
+
+            getUnplayedEpisodes() {
+                const available = this.getAvailableEpisodes();
+                const unplayed = available.filter(ep => !this.playedIds.has(ep.id));
+                if (unplayed.length === 0 && available.length > 0) {
+                    this.playedIds.clear();
+                    return available;
+                }
+                return unplayed;
+            }
+
+            playRandom() {
+                const available = this.getUnplayedEpisodes();
+                if (available.length === 0) {
+                    this.trackTitle.textContent = '没有更多节目了';
+                    return;
+                }
+                const idx = Math.floor(Math.random() * available.length);
+                this.playEpisode(available[idx]);
+            }
+
+            playEpisode(episode) {
+                this.currentEpisode = episode;
+                this.playedIds.add(episode.id);
+
+                // 更新 UI
+                this.shuffleLabel.textContent = episode.source || '每日豆瓣';
+                this.trackTitle.textContent = episode.title;
+                this.trackQuote.textContent = episode.quote ? `"${episode.quote}"` : '';
+                this.authorLabel.textContent = episode.author || '佚名';
+                this.updateCover(episode);
+                this.updateHeartButton();
+
+                this.audio.src = episode.audio_file;
+                this.audio.play().catch(() => this.showPlayButton());
+            }
+
+            updateCover(episode) {
+                let url;
+                if (episode.cover_file) {
+                    url = episode.cover_file;
+                } else {
+                    url = `https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&h=600&fit=crop&sig=${episode.id}`;
+                }
+
+                const img = new Image();
+                img.onload = () => { this.coverImage.src = url; };
+                img.onerror = () => {
+                    this.coverImage.src = `https://images.unsplash.com/photo-1532667449560-72a95c8d381b?w=600&h=600&fit=crop`;
+                };
+                img.src = url;
+            }
+
+            togglePlay() {
+                if (this.audio.paused) this.audio.play();
+                else this.audio.pause();
+            }
+
+            onPlay() {
+                this.isPlaying = true;
+                this.iconPlay.style.display = 'none';
+                this.iconPause.style.display = 'block';
+                this.audioBars.classList.add('playing');
+            }
+
+            onPause() {
+                this.isPlaying = false;
+                this.iconPlay.style.display = 'block';
+                this.iconPause.style.display = 'none';
+                this.audioBars.classList.remove('playing');
+            }
+
+            showPlayButton() {
+                this.iconPlay.style.display = 'block';
+                this.iconPause.style.display = 'none';
+            }
+
+            toggleLike() {
+                if (!this.currentEpisode) return;
+                const id = this.currentEpisode.id;
+                if (this.likedIds.has(id)) this.likedIds.delete(id);
+                else this.likedIds.add(id);
+                this.saveToStorage('liked', [...this.likedIds]);
+                this.updateHeartButton();
+            }
+
+            updateHeartButton() {
+                if (!this.currentEpisode) return;
+                if (this.likedIds.has(this.currentEpisode.id)) {
+                    this.btnHeart.classList.add('liked');
+                    this.btnHeart.querySelector('svg').setAttribute('fill', 'currentColor');
+                } else {
+                    this.btnHeart.classList.remove('liked');
+                    this.btnHeart.querySelector('svg').setAttribute('fill', 'none');
+                }
+            }
+
+            skipEpisode() {
+                if (!this.currentEpisode) return;
+                this.skippedIds.add(this.currentEpisode.id);
+                this.saveToStorage('skipped', [...this.skippedIds]);
+                this.playNext();
+            }
+
+            playNext() {
+                this.playRandom();
+            }
+
+            updateProgress() {
+                const { currentTime, duration } = this.audio;
+                if (isNaN(duration)) {
+                    this.timeRemaining.textContent = '-0:00';
+                    this.progressFill.style.width = '0%';
+                    return;
+                }
+                const remaining = duration - currentTime;
+                const mins = Math.floor(remaining / 60);
+                const secs = Math.floor(remaining % 60);
+                this.timeRemaining.textContent = `-${mins}:${secs.toString().padStart(2, '0')}`;
+                this.progressFill.style.width = `${(currentTime / duration) * 100}%`;
+            }
+
+            saveToStorage(key, val) {
+                try { localStorage.setItem(`serendipity_${key}`, JSON.stringify(val)); } catch (e) {}
+            }
+
+            loadFromStorage(key) {
+                try {
+                    const v = localStorage.getItem(`serendipity_${key}`);
+                    return v ? JSON.parse(v) : null;
+                } catch (e) { return null; }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new SerendipityFM();
+        });
+    </script>
+</body>
+</html>
